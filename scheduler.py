@@ -160,7 +160,7 @@ class Scheduler:
 
             print(" ")
 
-            if arrived_process:
+            if not arrived_process:
                 # if no processes arrived
                 # next_arrival = float('inf')     # infinity
                 # for process in self.process:
