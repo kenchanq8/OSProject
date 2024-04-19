@@ -39,7 +39,6 @@ class Scheduler:
 
     def pp(self):
         # preemptive priority
-         # preemptive priority
         if not self.process:  # leave if empty
             return
 
