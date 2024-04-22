@@ -39,11 +39,97 @@ class Scheduler:
 
     def pp(self):
         # preemptive priority
-        pass
+        if not self.process:  # leave if empty
+            return
+
+        current_time = 0
+
+        while self.process:
+            arrived_process = []
+
+            print("time:", current_time, "\n")
+
+            if self.process:  # check if list is not empty
+                print("arrived processes:")
+                for process in self.process:
+                    # filter processes based on arrival time
+                    if process.at <= current_time:
+                        arrived_process.append(process)
+                        print(f"p{process.pid}: {process.remaining_time}", sep='')
+            else:
+                print("No processes in the list")
+
+            print(" ")
+
+            if not arrived_process:
+                # if no processes arrived
+                next_arrival = min(process.at for process in self.process)
+                current_time = next_arrival
+                continue
+
+            Hpriority_process = None
+            h_priority = float('inf')  # infinity
+
+            # choose the highest priority process
+            for process in arrived_process:
+                if process.priority < h_priority:
+                    Hpriority_process = process
+                    h_priority = process.priority
+                    if Hpriority_process.remaining_time == Hpriority_process.bt:
+                        Hpriority_process.first_started = current_time
+
+            print("running process: p", Hpriority_process.pid, sep='')
+            print("____________________")
+
+            current_time += 1  # increment time
+            Hpriority_process.remaining_time -= 1  # decrement process time
+
+            if Hpriority_process.remaining_time == 0:
+                # process complete
+                Hpriority_process.ft = current_time  # store finish time
+                self.finished_process.append(Hpriority_process)  # add to finished processes
+                arrived_process.remove(Hpriority_process)  # remove from arrival list
+                self.process.remove(Hpriority_process)  # Remove from process list
+
+        print("time:", current_time, "\n")
+        print("Running finished\n")
+
+        print("average response time: ", avg_rt(self.finished_process))
+        print("average turn around time time: ", avg_tat(self.finished_process))
+        print("average waiting time: ", avg_wt(self.finished_process))
 
     def rr(self):
         # round robin
-        pass
+         if not self.process:  # leave if empty
+            return
+
+        current_time = 0
+
+        while self.process:
+            for process in self.process:
+                if process.remaining_time > 0:
+                    print("time:", current_time)
+                    print("running process: p", process.pid, sep='')
+                    print("____________________")
+
+                    if process.remaining_time > quantum:
+                        current_time += quantum
+                        process.remaining_time -= quantum
+                    else:
+                        current_time += process.remaining_time
+                        process.remaining_time = 0
+                        process.ft = current_time
+                        self.finished_process.append(process)
+                        self.process.remove(process)
+                        break  # break out of inner loop to recheck for new processes
+
+        print("time:", current_time)
+        print("Running finished\n")
+
+        #print("average response time: ", avg_rt(self.finished_process))
+        print("average turn around time: ", avg_tat(self.finished_process))
+        print("average waiting time: ", avg_wt(self.finished_process))
+
 
     def srtf(self):
         # shortest remaining time first
@@ -151,6 +237,9 @@ process = [Process(1, 0, 8, 0),
 process1 = []
 
 scheduler = Scheduler(process)
-scheduler.srtf()
+#scheduler.srtf()
+#scheduler.pp()
+scheduler.rr(quantum=3)
+
 
 # print(finish_time)
