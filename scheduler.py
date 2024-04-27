@@ -51,11 +51,24 @@ class Scheduler:
 
             if self.process:  # check if list is not empty
                 print("arrived processes:")
+
+                # sort processes based on arrival time then priority
+                sorted_process = []
                 for process in self.process:
+                    insert = False
+                    for i in range(len(sorted_process)):
+                        if process.at < sorted_process[i].at or (process.at == sorted_process[i].at and process.priority
+                        < sorted_process[i].priority):
+                            sorted_process.insert(i, process)
+                            insert = True
+                            break
+                    if not insert:
+                        sorted_process.append(process)
+                for process in sorted_process:
                     # filter processes based on arrival time
                     if process.at <= current_time:
                         arrived_process.append(process)
-                        print(f"p{process.pid}: {process.remaining_time}", sep='')
+                        print(f"p{process.pid}: ({process.remaining_time}, {process.priority})", sep='')
             else:
                 print("No processes in the list")
 
@@ -98,9 +111,9 @@ class Scheduler:
         print("average turn around time time: ", avg_tat(self.finished_process))
         print("average waiting time: ", avg_wt(self.finished_process))
 
-    def rr(self):
+    def rr(self, quantum):
         # round robin
-         if not self.process:  # leave if empty
+        if not self.process:  # leave if empty
             return
 
         current_time = 0
@@ -126,10 +139,9 @@ class Scheduler:
         print("time:", current_time)
         print("Running finished\n")
 
-        #print("average response time: ", avg_rt(self.finished_process))
+        # print("average response time: ", avg_rt(self.finished_process))
         print("average turn around time: ", avg_tat(self.finished_process))
         print("average waiting time: ", avg_wt(self.finished_process))
-
 
     def srtf(self):
         # shortest remaining time first
@@ -229,17 +241,18 @@ def random_file(file):
     pass
 
 
-process = [Process(1, 0, 8, 0),
-           Process(2, 1, 4, 0),
-           Process(3, 2, 9, 0),
-           Process(4, 3, 5, 0)]
+process = [Process(1, 0, 5, 4),
+           Process(2, 0, 3, 1),
+           Process(3, 1, 1, 2),
+           Process(4, 3, 2, 3),
+           Process(5, 5, 3, 1)]
 
 process1 = []
 
 scheduler = Scheduler(process)
-#scheduler.srtf()
-#scheduler.pp()
-scheduler.rr(quantum=3)
+# scheduler.srtf()
+scheduler.pp()
+# scheduler.rr(quantum=2)
 
 
 # print(finish_time)
