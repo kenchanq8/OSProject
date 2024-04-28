@@ -37,6 +37,7 @@ class Scheduler:
         self.current_process = None
         self.arrived_process = []   # ---might cause logic error later---
 
+    # DONE (just add more comments)
     def pp(self):
         # preemptive priority
         if not self.process:  # leave if empty
@@ -190,71 +191,69 @@ class Scheduler:
         print("average turn around time time: ", avg_tat(self.finished_process))
         print("average waiting time: ", avg_wt(self.finished_process))
 
+    # DONE
     def srtf(self):
         # shortest remaining time first
 
-        if not self.process:    # leave if empty
-            return
+        if not self.process:  # empty process passed
+            return False
 
-        # self.start_timer()      # start timer
-        current_time = 0
+        current_time = 0  # start timer
 
-        while self.process:
-
+        while self.process or self.arrived_process:
             print("time:", current_time, "\n")
-
-            if self.process:    # check if list is not empty
-                print("arrived processes:")
+            if self.process:  # check if list is not empty
                 for process in self.process:
                     # filter processes based on arrival time
                     if process.at <= current_time:
-                        self.arrived_process.append(process)
-                        print(f"p{process.pid}: {process.remaining_time}", sep='')
-            else:
-                print("No processes in the list")
+                        self.arrived_process.append(process)    # add to arrived processes
+                        self.process = self.process[1:]     # remove from process list
 
-            # for process in arrived_process:
-            #     print(f"p{process.pid}")
+            if self.arrived_process:    # check if there are arrived processes
+                # print all arrived processes with their remaining time
+                print("arrived processes:")
 
-            print(" ")
+                # print arrived processes
+                for process in self.arrived_process:
+                    print(f"p{process.pid}: {process.remaining_time}", sep='')
 
-            if not self.arrived_process:
-                next_arrival = min(process.at for process in self.process)
-                current_time = next_arrival
-                continue
+                # sort arrived processes based on remaining time
+                for i in range(len(self.arrived_process)):
+                    min_i = i
+                    for j in range(i+1, len(self.arrived_process)):
+                        if self.arrived_process[j].remaining_time < self.arrived_process[min_i].remaining_time:
+                            min_i = j
+                        self.arrived_process[min_i], self.arrived_process[i] = self.arrived_process[i], self.arrived_process[min_i]
+                print(" ")
 
-            shortest_process = None
-            shortest_time = float('inf')  # infinity
+                shortest_process = self.arrived_process[0]  # chooses the shortest process
 
-            # choose the shortest remaining time process
-            for process in self.arrived_process:
-                if process.remaining_time < shortest_time:
-                    shortest_process = process
-                    shortest_time = process.remaining_time
-                    if shortest_process.remaining_time == shortest_process.bt:
-                        shortest_process.first_started = current_time
+                # record process first started time
+                if shortest_process.remaining_time == shortest_process.bt:
+                    shortest_process.first_started = current_time
 
-            print("running process: p", shortest_process.pid, sep='')
-            print("____________________")
+                # print running process
+                print("running process: p", shortest_process.pid, sep='')
+                print("____________________")
 
-            current_time += 1  # increment time
-            shortest_process.remaining_time -= 1    # decrement process time
+                current_time += 1  # increment time
+                shortest_process.remaining_time -= 1  # decrement process remaining time
 
-            if shortest_process.remaining_time == 0:
                 # procees complete
-                shortest_process.ft = current_time     # store finish time
-                self.finished_process.append(shortest_process)      # add to finished processes
-                self.arrived_process.remove(shortest_process)    # remove from arrival list
-                self.process.remove(shortest_process)  # Remove from process list
+                if shortest_process.remaining_time == 0:
+                    shortest_process.ft = current_time  # store finish time
+                    self.finished_process.append(shortest_process)  # add to finished processes
+                    self.arrived_process = self.arrived_process[1:]  # remove from arrival list
 
-        print("time:", current_time, "\n")
-        print("Running finished\n")
+            else:   # no arrived processes
+                current_time += 1   # increment time
 
-        print("average response time: ", avg_rt(self.finished_process))
+        print("running finished at time", current_time)   # end of running queue
+
+        # calculate averages
+        print("\naverage response time: ", avg_rt(self.finished_process))
         print("average turn around time time: ", avg_tat(self.finished_process))
         print("average waiting time: ", avg_wt(self.finished_process))
-        # finish_time = self.stop_timer()
-        # return finish_time
 
     def mlfq(self):
         # custom algorithm
@@ -271,18 +270,25 @@ def random_file(file):
     pass
 
 
-process = [Process(1, 0, 5, 4),
+process1 = [Process(1, 0, 5, 4),
            Process(2, 0, 3, 1),
            Process(3, 1, 1, 2),
            Process(4, 3, 2, 3),
-           Process(5, 5, 3, 1)]
+           Process(5, 5, 3, 3)]
 
-process1 = []
+process2 = [Process(1, 0, 8, 0),
+            Process(2, 1, 4, 0),
+            Process(3, 2, 9, 0),
+            Process(4, 3, 5, 0)]
 
-scheduler = Scheduler(process)
-# scheduler.srtf()
+process3 = []
+
+# scheduler = Scheduler(process1)
+scheduler = Scheduler(process2)
+# scheduler = Scheduler(process3)
+scheduler.srtf()
 # scheduler.pp()
-scheduler.rr(quantum=2)
+# scheduler.rr(quantum=2)
 
 
 
