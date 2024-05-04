@@ -17,7 +17,7 @@
 # elapsed_time = stop_timer(start_time)
 # print("Elapsed time:", elapsed_time, "seconds")
 
-list = [1, 2, 3, 4, 5]
+list = [1]
 list = list[1:]
 for i in range(len(list)):
     print(list[i])
