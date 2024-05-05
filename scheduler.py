@@ -1,9 +1,8 @@
-# import time
 from process import *
 
 # global variables
-QUANTUM1 = 5
-QUANTUM2 = 10
+QUANTUM1 = 10
+QUANTUM2 = 5
 
 
 def avg_rt(finished_process):
@@ -51,6 +50,7 @@ class Scheduler:
         self.current_process = None
         self.arrived_process = []
         self.current_time = 0
+        self.quantum = 2
         self.qnt1 = QUANTUM1
         self.qnt2 = QUANTUM2
         self.Q1 = []
@@ -127,24 +127,24 @@ class Scheduler:
         self.end_print()
 
     # DONE
-    def rr(self, quantum):
+    def rr(self):
         # round-robin
 
         # empty list
         if not self.process:
             return False
 
-        current_process_qtimer = quantum  # set timer for current running process
+        current_process_qtimer = self.quantum  # set timer for current running process
 
         while self.process or self.arrived_process:
             print("time:", self.current_time, "\n")
 
             if self.process:  # check if list is not empty
-                for process in self.process:  # loop over all process
+                for process in self.process[:]:  # loop over all process
                     # add process to arrived process list and remove from processes list
                     if process.at <= self.current_time:
                         self.arrived_process.append(process)
-                        self.process = self.process[1:]
+                        self.process.remove(process)
 
             # print all arrived processes with their remaining time
             if self.arrived_process:
@@ -175,21 +175,21 @@ class Scheduler:
                             self.finished_process.append(self.current_process)  # add process to finished list
                             self.arrived_process = self.arrived_process[1:]  # remove current and push elems
                             self.current_process.ft = self.current_time + 1  # record finish time
-                            current_process_qtimer = quantum
+                            current_process_qtimer = self.quantum
 
                         # got switched without finishing
                         if current_process_qtimer == 0:
                             self.arrived_process = self.arrived_process[1:]  # remove first element
 
                             # add process arriving next iteration before the currently switched process
-                            for process in self.process:
+                            for process in self.process[:]:
                                 if process.at == (self.current_time + 1):  # check for arriving processes
                                     self.arrived_process.append(process)  # add process to arrived process list
                                     self.process.remove(process)  # remove process from process list
                                     # (avoids repetition in the arrived process list)
 
                             self.arrived_process.append(self.current_process)  # read switched process
-                            current_process_qtimer = quantum  # reset quantum timer
+                            current_process_qtimer = self.quantum  # reset quantum timer
 
                 self.current_time += 1  # increment timer
 
@@ -210,11 +210,11 @@ class Scheduler:
         while self.process or self.arrived_process:
             print("time:", self.current_time, "\n")
             if self.process:  # check if list is not empty
-                for process in self.process:
+                for process in self.process[:]:
                     # filter processes based on arrival time
                     if process.at <= self.current_time:
                         self.arrived_process.append(process)  # add to arrived processes
-                        self.process = self.process[1:]  # remove from process list
+                        self.process.remove(process)  # remove from process list
 
             # print all arrived processes with their remaining time
             if self.arrived_process:
@@ -281,6 +281,7 @@ class Scheduler:
         # print running process
         print("running process: p", Q[0].pid, sep='')
         print("____________________")
+        Q[0].Qwaited = 0
 
         Q[0].remaining_time -= 1  # decrement process remaining time
 
@@ -301,7 +302,7 @@ class Scheduler:
 
         while self.process or self.arrived_process or self.Q1 or self.Q2 or self.Q3:
             # add all arrived processes in list
-            for process in self.process:
+            for process in self.process[:]:
                 if process.at <= self.current_time:  # process arrived
                     self.arrived_process.append(process)
                     self.process.remove(process)
@@ -312,22 +313,31 @@ class Scheduler:
 
             if self.Q1:
                 # run algorithm
-                self.Q1, self.Q2, self.qnt1, done_process = self.custom_algorithm(self.Q1, self.Q2, self.qnt1)
+                self.Q1, self.Q2, self.Q3, self.qnt1, done_process = self.custom_algorithm(self.Q1, self.Q2, self.qnt1, self.Q3)
 
                 # reset quantum
                 if self.qnt1 == 0 or done_process:
                     self.qnt1 = QUANTUM1
+
+                # checking for process priority update
+                self.upgrade_priority(self.Q1, self.Q1)
+                self.upgrade_priority(self.Q2, self.Q1)
+                self.upgrade_priority(self.Q3, self.Q2)
 
             elif self.Q2:
                 if self.Q1:  # Q1 is not empty
                     continue
 
                 # run algorithm
-                self.Q2, self.Q3, self.qnt2, done_process = self.custom_algorithm(self.Q2, self.Q3, self.qnt2)
+                self.Q2, self.Q3, none_value, self.qnt2, done_process = self.custom_algorithm(self.Q2, self.Q3, self.qnt2)
 
                 # reset quantum
                 if self.qnt2 == 0 or done_process:
                     self.qnt2 = QUANTUM2
+
+                # checking for process priority update
+                self.upgrade_priority(self.Q2, self.Q1)
+                self.upgrade_priority(self.Q3, self.Q2)
 
             elif self.Q3:  # if Q1 or Q2 is not empty
                 if self.Q1 or self.Q2:
@@ -336,11 +346,14 @@ class Scheduler:
                 # run algorithm
                 self.Q3 = self.fcfs_ca(self.Q3)
 
+                # checking for process priority update
+                self.upgrade_priority(self.Q3, self.Q2)
+
         # print averages
         self.end_print()
 
     # DONE
-    def custom_algorithm(self, Qcurrent, Qnext, qnt):
+    def custom_algorithm(self, Qcurrent, Qnext, qnt, Qlast=None):
         # printing time and arrived processes
         print("time:", self.current_time, "\n")
         print_arrived(self.Q1, 1)
@@ -350,17 +363,19 @@ class Scheduler:
         done_process = None     # reset flag
 
         if qnt > 0:
+            self.current_process = Qcurrent[0]
             # process not finished
             if Qcurrent[0].remaining_time > 0:
                 print("running process: p", Qcurrent[0].pid, sep='')
                 print("____________________")
+                Qcurrent[0].Qwaited = 0
 
                 # record first started
                 if Qcurrent[0].remaining_time == Qcurrent[0].bt:
                     Qcurrent[0].first_started = self.current_time
 
-                    qnt -= 1  # decrement quantum timer for process
-                    Qcurrent[0].remaining_time -= 1  # decrement remaining time for process
+                qnt -= 1  # decrement quantum timer for process
+                Qcurrent[0].remaining_time -= 1  # decrement remaining time for process
 
                 # process finished
                 if Qcurrent[0].remaining_time == 0:
@@ -377,29 +392,44 @@ class Scheduler:
 
             self.current_time += 1  # increment timer
 
-            return Qcurrent, Qnext, qnt, done_process
+            return Qcurrent, Qnext, Qlast, qnt, done_process
 
     # DONE
     def sort_process_in_queues(self):
-        for process in self.arrived_process:
-            if process.bt <= QUANTUM1 or (QUANTUM2 + 10) > process.bt > (QUANTUM1 + 10):
+        while self.arrived_process:
+            process = self.arrived_process[0]
+            if process.bt > 2*QUANTUM1:
                 process.Qpriority = 1
-                self.Q1.append(process)
-            elif process.bt <= QUANTUM2 or process.bg > (QUANTUM2 + 10):
-                process.Qpriority = 2
                 self.Q2.append(process)
+                self.arrived_process.remove(process)
+            elif process.bt > 2*QUANTUM2:
+                process.Qpriority = 2
+                self.Q1.append(process)
+                self.arrived_process.remove(process)
             else:
                 process.Qpriority = 3
                 self.Q3.append(process)
+                self.arrived_process.remove(process)
 
     def end_print(self):
         # end of running queue
         print("\nrunning finished at time", self.current_time)
 
         # calculate averages
-        print("\naverage response time: ", avg_rt(self.finished_process))
-        print("average turn around time time: ", avg_tat(self.finished_process))
-        print("average waiting time: ", avg_wt(self.finished_process))
+        print("\naverage response time: %.1f" % avg_rt(self.finished_process))
+        print("average turn around time time: %.1f" % avg_tat(self.finished_process))
+        print("average waiting time: %.1f" % avg_wt(self.finished_process))
+
+    def upgrade_priority(self, Qlow, Qhigh):
+        # increment the time processes are waiting
+        if Qlow and self.current_process:
+            for p in Qlow:
+                if p.pid != self.current_process.pid:
+                    p.Qwaited += 1
+                    if p.Qwaited >= 15:
+                        Qlow.remove(p)
+                        Qhigh.append(p)
+                        p.Qwaited = 0
 
 
 def read_file(file):
@@ -412,34 +442,36 @@ def random_file(file):
     pass
 
 
-process1 = [Process(1, 0, 5, 4),
-            Process(2, 0, 3, 1),
-            Process(3, 1, 1, 2),
-            Process(4, 3, 2, 3),
-            Process(5, 5, 3, 3)]
+process_rr_pp = [Process(1, 0, 5, 4),
+              Process(2, 0, 3, 1),
+              Process(3, 1, 1, 2),
+              Process(4, 3, 2, 3),
+              Process(5, 5, 3, 1)]
 
-process2 = [Process(1, 0, 8, 0),
-            Process(2, 1, 4, 0),
-            Process(3, 2, 9, 0),
-            Process(4, 3, 5, 0)]
+process_srtf = [Process(1, 0, 8, 0),
+                Process(2, 1, 4, 0),
+                Process(3, 2, 9, 0),
+                Process(4, 3, 5, 0)]
 
 process3 = [Process(1, 0, 24, 0),
             Process(2, 0, 3, 0),
             Process(3, 0, 3, 0)]
 
-process4 = [Process(1, 0, 36, 0, Qpriority=1),
-            Process(2, 16, 20, 0, Qpriority=1),
-            Process(3, 20, 12, 0, Qpriority=1)]
+process4 = [Process(1, 0, 10, 0),
+            Process(2, 0, 25, 0),
+            Process(3, 0, 25, 0)]
 
-process5 = []
 
-# scheduler = Scheduler(process1)
-scheduler = Scheduler(process4)
+
+# process5 = []
+
+# scheduler = Scheduler(process_rr_pp)
+# scheduler = Scheduler(process_srtf)
 # scheduler = Scheduler(process3)
-# scheduler = Scheduler(process4)
+scheduler = Scheduler(process4)
 # scheduler.srtf()
 # scheduler.pp()
-# scheduler.rr(quantum=2)
-# scheduler.fcfs()
+# scheduler.rr()
+# scheduler.fcfs_ca()
 scheduler.mlfq()
 

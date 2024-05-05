@@ -1,10 +1,10 @@
 class Process:
-    def __init__(self, pid, arrival_time, burst_time, priority, Qpriority=None):
+    def __init__(self, pid, arrival_time, burst_time, priority):
         self.pid = pid
         self.at = arrival_time
         self.bt = burst_time
         self.priority = priority
-        self.Qpriority = Qpriority
+        self.Qwaited = 0
         self.remaining_time = burst_time
         self.first_started = None
         self.ft = None
