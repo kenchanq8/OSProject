@@ -44,13 +44,13 @@ def print_arrived(Q, qpriority):
 
 
 class Scheduler:
-    def __init__(self, process):
+    def __init__(self, process, qnt=None):
         self.process = process
         self.finished_process = []
         self.current_process = None
         self.arrived_process = []
         self.current_time = 0
-        self.quantum = 2
+        self.quantum = qnt
         self.qnt1 = QUANTUM1
         self.qnt2 = QUANTUM2
         self.Q1 = []
@@ -398,16 +398,13 @@ class Scheduler:
     def sort_process_in_queues(self):
         while self.arrived_process:
             process = self.arrived_process[0]
-            if process.bt > 2*QUANTUM1:
-                process.Qpriority = 1
+            if process.bt > QUANTUM1:
                 self.Q2.append(process)
                 self.arrived_process.remove(process)
-            elif process.bt > 2*QUANTUM2:
-                process.Qpriority = 2
+            elif process.bt > QUANTUM2:
                 self.Q1.append(process)
                 self.arrived_process.remove(process)
             else:
-                process.Qpriority = 3
                 self.Q3.append(process)
                 self.arrived_process.remove(process)
 
@@ -437,16 +434,12 @@ def read_file(file):
     pass
 
 
-def random_file(file):
-    # generate random file
-    pass
-
 
 process_rr_pp = [Process(1, 0, 5, 4),
-              Process(2, 0, 3, 1),
-              Process(3, 1, 1, 2),
-              Process(4, 3, 2, 3),
-              Process(5, 5, 3, 1)]
+                 Process(2, 0, 3, 1),
+                 Process(3, 1, 1, 2),
+                 Process(4, 3, 2, 3),
+                 Process(5, 5, 3, 1)]
 
 process_srtf = [Process(1, 0, 8, 0),
                 Process(2, 1, 4, 0),
@@ -459,19 +452,16 @@ process3 = [Process(1, 0, 24, 0),
 
 process4 = [Process(1, 0, 10, 0),
             Process(2, 0, 25, 0),
-            Process(3, 0, 25, 0)]
+            Process(3, 0, 2, 0)]
 
-
-
-# process5 = []
 
 # scheduler = Scheduler(process_rr_pp)
 # scheduler = Scheduler(process_srtf)
 # scheduler = Scheduler(process3)
 scheduler = Scheduler(process4)
-# scheduler.srtf()
+scheduler.srtf()
 # scheduler.pp()
 # scheduler.rr()
 # scheduler.fcfs_ca()
-scheduler.mlfq()
+# scheduler.mlfq()
 
