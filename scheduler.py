@@ -1,16 +1,8 @@
-class Process:
-    def __init__(self, pid, arrival_time, burst_time, priority):
-        self.pid = pid
-        self.arrival_time = arrival_time
-        self.burst_time = burst_time
-        self.priority = priority
-        self.remaining_time= burst_time
+import process
 
-
-    def __str__(self):
-        return f"Task(pid={self.pid}, arrival_time={self.arrival_time}, burst_time={self.burst_time}, priority={self.priority})"
-
-
+# global variables (FOR CUSTOM ALGORITHM DONT REMOVE)
+QUANTUM1 = 10
+QUANTUM2 = 5
 
 
 def avg_rt(finished_process):
@@ -54,37 +46,29 @@ def print_arrived(Q, qpriority):
 class Scheduler:
     def __init__(self):
         self.tasks = []
-       # self.process=None
+        self.process = []
         self.finished_process = []
         self.current_process = None
         self.arrived_process = []
         self.current_time = 0
-        self.quantum = 0
-        self.q =0
+        self.quantum = None
+        self.qnt1 = QUANTUM1
+        self.qnt2 = QUANTUM2
         self.Q1 = []
         self.Q2 = []
         self.Q3 = []
 
-    def read_file(self,file):
-        f = open(file, 'r')
-        st=  f.readline()
-        self.q = map (int, st)
+    def read_file(self, file):
+        with open(file, 'r') as f:
+            self.quantum = int(f.readline().strip())  # Read the quantum value from the first line
 
-        next(f)
-        for line in f:
-            x = line.split()
-            pid, arrival_time, burst_time, priority = map(int, x)
-            P = Process(pid, arrival_time, burst_time, priority)
-            self.tasks.append(P)
+            for line in f:
+                x = line.split()
+                pid, arrival_time, burst_time, priority = map(int, x)
+                P = process.Process(pid, arrival_time, burst_time, priority)
+                self.process.append(P)
 
-
-    def printTasks(self):
-       for i in self.tasks:
-           print(i)
-
-
-
-    # DONE (just add more comments)
+    # DONE TESTING (just add more comments)
     def pp(self):
         # preemptive priority
         if not self.process:  # leave if empty
@@ -129,7 +113,7 @@ class Scheduler:
             Hpriority_process = None
             h_priority = float('inf')  # infinity
 
-            # choose the highest priority process
+            # choice the highest priority process
             for process in arrived_process:
                 if process.priority < h_priority:
                     Hpriority_process = process
@@ -153,23 +137,25 @@ class Scheduler:
         # print averages
         self.end_print()
 
-    # DONE
+    # DONE TESTING
     def rr(self):
         # round-robin
 
-        # empty list
-
+        # quantum_value = next(self.quantum)
+        #
+        # # Convert the extracted integer value to an integer
+        # quantum_integer = int(quantum_value)
         current_process_qtimer = self.quantum  # set timer for current running process
 
-        while self.tasks or self.arrived_process:
+        while self.process or self.arrived_process:
             print("time:", self.current_time, "\n")
 
-            if self.tasks:  # check if list is not empty
-                for process in self.tasks:  # loop over all process
+            if self.process:  # check if list is not empty
+                for process in self.process[:]:  # loop over all process
                     # add process to arrived process list and remove from processes list
-                    if process.arrival_time <= self.current_time:
+                    if process.at <= self.current_time:
                         self.arrived_process.append(process)
-                        self.tasks.remove(process)
+                        self.process.remove(process)
 
             # print all arrived processes with their remaining time
             if self.arrived_process:
@@ -208,7 +194,7 @@ class Scheduler:
 
                             # add process arriving next iteration before the currently switched process
                             for process in self.process[:]:
-                                if process.arrival_time == (self.current_time + 1):  # check for arriving processes
+                                if process.at == (self.current_time + 1):  # check for arriving processes
                                     self.arrived_process.append(process)  # add process to arrived process list
                                     self.process.remove(process)  # remove process from process list
                                     # (avoids repetition in the arrived process list)
@@ -225,7 +211,7 @@ class Scheduler:
         # print averages
         self.end_print()
 
-    # DONE
+    # DONE TESTING
     def srtf(self):
         # shortest remaining time first
 
@@ -255,9 +241,12 @@ class Scheduler:
                     for j in range(i + 1, len(self.arrived_process)):
                         if self.arrived_process[j].remaining_time < self.arrived_process[min_i].remaining_time:
                             min_i = j
-                        self.arrived_process[min_i], self.arrived_process[i] = \
-                            self.arrived_process[i], self.arrived_process[min_i]
+                    self.arrived_process[i], self.arrived_process[min_i] = \
+                        self.arrived_process[min_i], self.arrived_process[i]
                 print(" ")
+
+                # for p in self.arrived_process:
+                #     print(f"p{p.pid}, {p.remaining_time}")
 
                 # chooses the shortest process
                 shortest_process = self.arrived_process[0]
@@ -338,11 +327,12 @@ class Scheduler:
 
             if self.Q1:
                 # run algorithm
-                self.Q1, self.Q2, self.Q3, self.qnt1, done_process = self.custom_algorithm(self.Q1, self.Q2, self.qnt1, self.Q3)
+                self.Q1, self.Q2, self.Q3, self.qnt1, done_process = self.custom_algorithm(self.Q1, self.Q2, self.qnt1,
+                                                                                           self.Q3)
 
                 # reset quantum
                 if self.qnt1 == 0 or done_process:
-                    self.qnt1 = self.q
+                    self.qnt1 = QUANTUM1
 
                 # checking for process priority update
                 self.upgrade_priority(self.Q1, self.Q1)
@@ -354,11 +344,12 @@ class Scheduler:
                     continue
 
                 # run algorithm
-                self.Q2, self.Q3, none_value, self.qnt2, done_process = self.custom_algorithm(self.Q2, self.Q3, self.qnt2)
+                self.Q2, self.Q3, none_value, self.qnt2, done_process = self.custom_algorithm(self.Q2, self.Q3,
+                                                                                              self.qnt2)
 
                 # reset quantum
                 if self.qnt2 == 0 or done_process:
-                    self.qnt2 = self.q
+                    self.qnt2 = QUANTUM2
 
                 # checking for process priority update
                 self.upgrade_priority(self.Q2, self.Q1)
@@ -385,7 +376,7 @@ class Scheduler:
         print_arrived(self.Q2, 2)
         print_arrived(self.Q3, 3)
 
-        done_process = None     # reset flag
+        done_process = None  # reset flag
 
         if qnt > 0:
             self.current_process = Qcurrent[0]
@@ -423,11 +414,11 @@ class Scheduler:
     def sort_process_in_queues(self):
         while self.arrived_process:
             process = self.arrived_process[0]
-            if process.bt > 2*self.q:
+            if process.bt > self.qnt1:
                 process.Qpriority = 1
                 self.Q2.append(process)
                 self.arrived_process.remove(process)
-            elif process.bt > 2*self.q:
+            elif process.bt > self.qnt2:
                 process.Qpriority = 2
                 self.Q1.append(process)
                 self.arrived_process.remove(process)
@@ -444,6 +435,7 @@ class Scheduler:
         print("\naverage response time: %.1f" % avg_rt(self.finished_process))
         print("average turn around time time: %.1f" % avg_tat(self.finished_process))
         print("average waiting time: %.1f" % avg_wt(self.finished_process))
+        print("")
 
     def upgrade_priority(self, Qlow, Qhigh):
         # increment the time processes are waiting
@@ -455,5 +447,3 @@ class Scheduler:
                         Qlow.remove(p)
                         Qhigh.append(p)
                         p.Qwaited = 0
-
-

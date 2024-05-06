@@ -1,55 +1,39 @@
-
 from scheduler import *
 
-
-print("1-Preemptive priority(PP)\n"
-             "2-Round Robin(RR)\n"
-             "3-Shortest Remaining Time First(SRTF)\n"
-             "4-Multi-level feedback queue Custom algorithm(Mlf)\n")
-
-choose=int(input("Select scheduling :\n"))
-
-'''
-process_srtf = [Process(1, 0, 8, 0),
-                    Process(2, 1, 4, 0),
-                    Process(3, 2, 9, 0),
-                    Process(4, 3, 5, 0)]
-
-process_rr_pp = [Process(1, 0, 5, 4),
-              Process(2, 0, 3, 1),
-              Process(3, 1, 1, 2),
-              Process(4, 3, 2, 3),
-              Process(5, 5, 3, 1)]
-              '''
+# create scheduler
 S = Scheduler()
 S.read_file('test')
-S.printTasks()
 
+while True:
+    # Show menu
+    print("1-Preemptive priority (PP)\n"
+          "2-Round Robin (RR)\n"
+          "3-Shortest Remaining Time First (SRTF)\n"
+          "4-Multi-level feedback queue Custom algorithm (MLFQ)\n")
+    # take selection
+    choice = int(input("Select scheduling: "))
+    print("____________________")
 
+    if choice == 0:     # Exit
+        break
 
-
-while choose!=0:
-    if choose==1:
+    elif choice == 1:   # PP
+        print("Running Preemptive Priority\n")
         S.pp()
 
-    elif choose ==2:
+    elif choice == 2:   # RR
+        print("Running Round Robin\n")
         S.rr()
 
-    elif choose ==3:
+    elif choice == 3:   # SRTF
+        print("Running Shortest Remaining Time First\n")
         S.srtf()
 
-    elif choose==4:
-
+    elif choice == 4:   # MLFQ
+        print("Running Multi-Level Feedback Queue\n")
         S.mlfq()
-    else:
-        print("AGIAN!")
-
-    print("1-Preemptive priority(PP)\n"
-          "2-Round Robin(RR)\n"
-          "3-Shortest Remaining Time First(SRTF)\n"
-          "4-Multi-level feedback queue Custom algorithm(Mlf)\n")
-
-    choose = int(input("Select scheduling :\n"))
+    else:               # Wrong selection
+        print("AGIAN!\n")
 
 print("Thank You")
 
