@@ -70,13 +70,15 @@ class Scheduler:
 
         elif choice == 3:  # SRTF
             print("Running Shortest Remaining Time First\n")
+            self.srtf()
 
         elif choice == 4:  # MLFQ
             print("Running Multi-Level Feedback Queue\n")
+            self.mlfq()
+
         else:  # Wrong selection
             print("AGIAN!\n")
             return
-        self.pp()
 
         print("Start drawing Gantt chart")
 
@@ -331,7 +333,7 @@ class Scheduler:
                     self.current_process.ft = self.current_time  # store finish time
                     self.finished_process.append(self.current_process)  # add to finished processes
                     self.arrived_process = self.arrived_process[1:]  # remove from arrival list
-                    self.current_process.end_running(self.current_time)     # record end time for drawing
+                    self.current_process.end_running(self.current_time-1)     # record end time for drawing
 
             # no arrived processes
             else:
