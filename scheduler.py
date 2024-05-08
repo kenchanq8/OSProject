@@ -58,7 +58,7 @@ class Scheduler:
         self.Q2 = []        # queue level 2 rr
         self.Q3 = []        # queue level 3 fcfs
 
-    def draw_gantt_chart(self, ax, choice):
+    def draw_gantt_chart(self, ax, choice, level=None):
         # run scheduler
         if choice == 1:  # PP
             print("Running Preemptive Priority\n")
@@ -91,29 +91,38 @@ class Scheduler:
 
         # Draw finished processes
         for process in self.finished_process:
-            start_times = process.start_times  # Get the list of start times
-            end_times = process.end_times  # Get the list of end times
+            start_times = process.start_times
+            end_times = process.end_times
+            remaining_times = process.remaining_times
 
-            # draw the start and end time for each process
             for i in range(len(start_times)):
                 start = start_times[i]
                 end = end_times[i]
+                remaining = remaining_times[i]
                 duration = end - start
-
-                # debugging
-                # print(f"Process: {process.pid}, Start: {start}, End: {end}, Duration: {duration}")
 
                 # Plot the rectangle
                 ax.barh(y=process.pid * (bar_height + y_spacing), left=start, width=duration, height=bar_height,
                         align='center', label=f"Process {process.pid}", color='cyan')
 
-                # Add process label
-                ax.text(start + duration / 2, process.pid * (bar_height + y_spacing) + bar_height / 2,
-                        f"Process {process.pid}", ha='center', va='center')
+                if choice != 1:
+                    # Add process label
+                    ax.text(start + duration / 2, process.pid * (bar_height + y_spacing) + bar_height / 2,
+                            f"p{process.pid}: {remaining}", ha='center', va='center')
+
+                else:
+                    # Add process label
+                    ax.text(start + duration / 2, process.pid * (bar_height + y_spacing) + bar_height / 2,
+                            f"p{process.pid}\n\n", ha='center', va='center')
+
+                    # Add remaining time and priority on top of the segment
+                    priority = process.priority  # Get priority of the process
+                    ax.text(start + duration / 2, process.pid * (bar_height + y_spacing) + bar_height / 2,
+                            f"({remaining}, {priority})", ha='center', va='center')
 
                 # Add yticks and labels
                 yticks.append(process.pid * (bar_height + y_spacing) + bar_height / 2)
-                ylabels.append(f"Process {process.pid}")
+                ylabels.append(f"p{process.pid}")
 
         # Set yticks and ylabels
         ax.set_yticks(yticks)
