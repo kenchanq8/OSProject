@@ -7,7 +7,7 @@ class GanttChartGUI:
         self.scheduler = scheduler
         self.choice = choice
 
-        if 0 < choice < 3:
+        if 0 < choice < 4:
             self.fig, self.ax = plt.subplots(figsize=(20, 10))
             scheduler.draw_gantt_chart(self.ax, choice)
 
@@ -17,6 +17,7 @@ class GanttChartGUI:
             plt.grid(True)
             plt.show()
             return
+
         elif choice == 4:
             self.fig, (self.ax1, self.ax2, self.ax3) = plt.subplots(3)
             scheduler.draw_gantt_chart(self.ax1, choice, level=1)
@@ -35,3 +36,15 @@ class GanttChartGUI:
             plt.tight_layout()
             plt.show()
             return
+
+    def draw_process(self, ax, process, level):
+        """
+        Draw a process on the Gantt chart.
+        """
+        for i in range(len(process.level_history) - 1):
+            start_time, start_level = process.level_history[i]
+            end_time, end_level = process.level_history[i + 1]
+            if start_level == level:  # Process was running in this queue level
+                ax.barh(level, end_time - start_time, left=start_time, align='center', color='blue', alpha=0.5)
+                ax.text(start_time + (end_time - start_time) / 2, level, f'P{process.pid}',
+                        ha='center', va='center', color='black')

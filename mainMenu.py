@@ -1,21 +1,27 @@
 import tkinter as tk
 from scheduler import Scheduler
+from ganttChartProcess import GanttChartGUI
+
 
 def run_scheduler(choice):
     if choice == 1:
         output_label.config(text="Running Preemptive Priority\n")
         S.pp()
+
     elif choice == 2:
         output_label.config(text="Running Round Robin\n")
         S.rr()
+
     elif choice == 3:
         output_label.config(text="Running Shortest Remaining Time First\n")
         S.srtf()
+
     elif choice == 4:
         output_label.config(text="Running Multi-Level Feedback Queue\n")
         S.mlfq()
-    else:
-        output_label.config(text="Wrong selection\n")
+
+    GanttChartGUI(S, choice)
+
 
 def on_select():
     selected_option = int(var.get())

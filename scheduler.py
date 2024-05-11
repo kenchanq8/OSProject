@@ -51,34 +51,15 @@ class Scheduler:
         self.current_process = None
         self.previous_process = None
         self.current_time = 0
-        self.quantum = None     # rr quantum (taken from file)
-        self.qnt1 = QUANTUM1    # queue 1 quantum
-        self.qnt2 = QUANTUM2    # queue 2 quantum
-        self.Q1 = []        # queue level 1 rr
-        self.Q2 = []        # queue level 2 rr
-        self.Q3 = []        # queue level 3 fcfs
+        self.quantum = None  # rr quantum (taken from file)
+        self.qnt1 = QUANTUM1  # queue 1 quantum
+        self.qnt2 = QUANTUM2  # queue 2 quantum
+        self.Q1 = []  # queue level 1 rr
+        self.Q2 = []  # queue level 2 rr
+        self.Q3 = []  # queue level 3 fcfs
 
     def draw_gantt_chart(self, ax, choice, level=None):
         # run scheduler
-        if choice == 1:  # PP
-            print("Running Preemptive Priority\n")
-            self.pp()
-
-        elif choice == 2:  # RR
-            print("Running Round Robin\n")
-            self.rr()
-
-        elif choice == 3:  # SRTF
-            print("Running Shortest Remaining Time First\n")
-            self.srtf()
-
-        elif choice == 4:  # MLFQ
-            print("Running Multi-Level Feedback Queue\n")
-            self.mlfq()
-
-        else:  # Wrong selection
-            print("AGIAN!\n")
-            return
 
         print("Start drawing Gantt chart")
 
@@ -88,41 +69,68 @@ class Scheduler:
         # Calculate the height and spacing of each process bar
         bar_height = 0.1
         y_spacing = 0
+        if not level:
+            # Draw finished processes
+            for process in self.finished_process:
+                start_times = process.start_times
+                end_times = process.end_times
+                remaining_times = process.remaining_times
 
-        # Draw finished processes
-        for process in self.finished_process:
-            start_times = process.start_times
-            end_times = process.end_times
-            remaining_times = process.remaining_times
+                for i in range(len(start_times)):
+                    start = start_times[i]
+                    end = end_times[i]
+                    remaining = remaining_times[i]
+                    duration = end - start
 
-            for i in range(len(start_times)):
-                start = start_times[i]
-                end = end_times[i]
-                remaining = remaining_times[i]
-                duration = end - start
+                    # Plot the rectangle
+                    ax.barh(y=process.pid * (bar_height + y_spacing), left=start, width=duration, height=bar_height,
+                            align='center', label=f"Process {process.pid}", color='cyan')
 
-                # Plot the rectangle
-                ax.barh(y=process.pid * (bar_height + y_spacing), left=start, width=duration, height=bar_height,
-                        align='center', label=f"Process {process.pid}", color='cyan')
+                    if choice != 1:
+                        # Add process label
+                        ax.text(start + duration / 2, process.pid * (bar_height + y_spacing) + bar_height / 2,
+                                f"p{process.pid}: {remaining}", ha='center', va='center')
 
-                if choice != 1:
-                    # Add process label
-                    ax.text(start + duration / 2, process.pid * (bar_height + y_spacing) + bar_height / 2,
-                            f"p{process.pid}: {remaining}", ha='center', va='center')
+                    else:
+                        # Add process label
+                        ax.text(start + duration / 2, process.pid * (bar_height + y_spacing) + bar_height / 2,
+                                f"p{process.pid}\n\n", ha='center', va='center')
 
-                else:
-                    # Add process label
-                    ax.text(start + duration / 2, process.pid * (bar_height + y_spacing) + bar_height / 2,
-                            f"p{process.pid}\n\n", ha='center', va='center')
+                        # Add remaining time and priority on top of the segment
+                        priority = process.priority  # Get priority of the process
+                        ax.text(start + duration / 2, process.pid * (bar_height + y_spacing) + bar_height / 2,
+                                f"({remaining}, {priority})", ha='center', va='center')
 
-                    # Add remaining time and priority on top of the segment
-                    priority = process.priority  # Get priority of the process
-                    ax.text(start + duration / 2, process.pid * (bar_height + y_spacing) + bar_height / 2,
-                            f"({remaining}, {priority})", ha='center', va='center')
+                    # Add yticks and labels
+                    yticks.append(process.pid * (bar_height + y_spacing) + bar_height / 2)
+                    ylabels.append(f"p{process.pid}")
+        else:
+            # Draw finished processes
+            for process in self.finished_process:
+                start_times = process.start_times
+                end_times = process.end_times
+                remaining_times = process.remaining_times
 
-                # Add yticks and labels
-                yticks.append(process.pid * (bar_height + y_spacing) + bar_height / 2)
-                ylabels.append(f"p{process.pid}")
+                for i in range(len(start_times)):
+                    start = start_times[i]
+                    end = end_times[i]
+                    remaining = remaining_times[i]
+                    duration = end - start
+
+                    if process.level_history:
+                        # Iterate through level history
+                        for i in range(len(process.level_history) - 1):
+                            start_time, start_level = process.level_history[i]
+                            end_time, end_level = process.level_history[i + 1]
+                            # Draw the process if it was running in the specified level during this interval
+                            if start_level == level:
+                                duration = end_time - start_time
+                                # Draw the process bar
+                                ax.barh(process.pid, duration, left=start_time, height=bar_height,
+                                        label=f"Queue {start_level}")
+                                # Add process label
+                                ax.text(start_time + duration / 2, process.pid, f"Process {process.pid}",
+                                    ha='center', va='center', color='black')
 
         # Set yticks and ylabels
         ax.set_yticks(yticks)
@@ -143,7 +151,7 @@ class Scheduler:
                 P = process.Process(pid, at, bt, priority)
                 self.process.append(P)
 
-    # DONE TESTING GUI (changed code tto fit gui drawing)
+    # DONE TESTING GUI (changed code to fit gui drawing)
     def pp(self):
         # preemptive priority
         if not self.process:  # leave if empty
@@ -188,7 +196,7 @@ class Scheduler:
                 # Record the start time when the process starts running
                 self.current_process.start_running(self.current_time)
                 if self.previous_process:
-                    self.previous_process.end_running(self.current_time-1)
+                    self.previous_process.end_running(self.current_time - 1)
 
             print("running process: p", self.current_process.pid, sep='')
             print("____________________")
@@ -202,7 +210,7 @@ class Scheduler:
                 self.current_process.ft = self.current_time  # store finish time
                 self.finished_process.append(self.current_process)  # add to finished processes
                 self.arrived_process.remove(self.current_process)  # remove from arrival list
-                self.current_process.end_running(self.current_time-1)
+                self.current_process.end_running(self.current_time - 1)
 
         # print averages
         self.end_print()
@@ -259,7 +267,7 @@ class Scheduler:
                             current_process_qtimer = self.quantum
                             self.current_process.end_running(self.current_time)
 
-                            # got switched without finishing
+                        # got switched without finishing
                         if current_process_qtimer == 0:
                             self.arrived_process = self.arrived_process[1:]  # remove first element
                             self.current_process.end_running(self.current_time)
@@ -327,7 +335,7 @@ class Scheduler:
 
                 if self.current_process != self.previous_process:
                     # Record the start time when the process starts running
-                    self.current_process.start_running(self.current_time)   # record start time for drawing
+                    self.current_process.start_running(self.current_time)  # record start time for drawing
 
                 # print running process
                 print("running process: p", self.current_process.pid, sep='')
@@ -342,7 +350,7 @@ class Scheduler:
                     self.current_process.ft = self.current_time  # store finish time
                     self.finished_process.append(self.current_process)  # add to finished processes
                     self.arrived_process = self.arrived_process[1:]  # remove from arrival list
-                    self.current_process.end_running(self.current_time-1)     # record end time for drawing
+                    self.current_process.end_running(self.current_time - 1)  # record end time for drawing
 
             # no arrived processes
             else:
@@ -353,7 +361,7 @@ class Scheduler:
         self.end_print()
 
     # DONE
-    def fcfs_ca(self, Q):
+    def fcfs_ca(self, Q, level):
         # empty process passed
         if not Q:
             return
@@ -365,23 +373,32 @@ class Scheduler:
         print_arrived(self.Q2, 2)
         print_arrived(self.Q3, 3)
 
+        self.current_process = Q[0]
+
         # record start time
-        if Q[0].remaining_time == Q[0].bt:
-            Q[0].first_started = self.current_time
+        if self.current_process.remaining_time == self.current_process.bt:
+            self.current_process.first_started = self.current_time
+            self.current_process.update_queue_level(self.current_time, level)
+
+        if self.current_process != self.previous_process:
+            # Record the start time when the process starts running
+            self.current_process.start_running(self.current_time)
 
         # print running process
-        print("running process: p", Q[0].pid, sep='')
+        print("running process: p", self.current_process.pid, sep='')
         print("____________________")
-        Q[0].Qwaited = 0
+        self.current_process.Qwaited = 0
 
-        Q[0].remaining_time -= 1  # decrement process remaining time
+        self.current_process.remaining_time -= 1  # decrement process remaining time
 
         # procees complete
-        if Q[0].remaining_time <= 0:
-            Q[0].ft = self.current_time  # store finish time
-            self.finished_process.append(Q[0])  # add to finished processes
+        if self.current_process.remaining_time <= 0:
+            self.current_process.ft = self.current_time  # store finish time
+            self.finished_process.append(self.current_process)  # add to finished processes
             Q = Q[1:]  # remove from arrival list
+            self.current_process.end_running(self.current_time)
 
+        self.previous_process = self.current_process
         self.current_time += 1  # increment timer
         return Q
 
@@ -404,49 +421,47 @@ class Scheduler:
 
             if self.Q1:
                 # run algorithm
-                self.Q1, self.Q2, self.Q3, self.qnt1, done_process = self.custom_algorithm(self.Q1, self.Q2, self.qnt1,
-                                                                                           self.Q3)
+                self.Q1, self.Q2, self.qnt1, done_process = self.custom_algorithm(self.Q1, self.Q2, self.qnt1, 1)
 
                 # reset quantum
                 if self.qnt1 == 0 or done_process:
                     self.qnt1 = QUANTUM1
 
                 # checking for process priority update
-                self.upgrade_priority(self.Q1, self.Q1)
-                self.upgrade_priority(self.Q2, self.Q1)
-                self.upgrade_priority(self.Q3, self.Q2)
+                self.upgrade_priority(self.Q1, self.Q1, level=1)
+                self.upgrade_priority(self.Q2, self.Q1, level=1)
+                self.upgrade_priority(self.Q3, self.Q2, level=2)
 
             elif self.Q2:
                 if self.Q1:  # Q1 is not empty
                     continue
 
                 # run algorithm
-                self.Q2, self.Q3, none_value, self.qnt2, done_process = self.custom_algorithm(self.Q2, self.Q3,
-                                                                                              self.qnt2)
+                self.Q2, self.Q3, self.qnt2, done_process = self.custom_algorithm(self.Q2, self.Q3, self.qnt2, 2)
 
                 # reset quantum
                 if self.qnt2 == 0 or done_process:
                     self.qnt2 = QUANTUM2
 
                 # checking for process priority update
-                self.upgrade_priority(self.Q2, self.Q1)
-                self.upgrade_priority(self.Q3, self.Q2)
+                self.upgrade_priority(self.Q2, self.Q1, level=1)
+                self.upgrade_priority(self.Q3, self.Q2, level=2)
 
             elif self.Q3:  # if Q1 or Q2 is not empty
                 if self.Q1 or self.Q2:
                     continue
 
                 # run algorithm
-                self.Q3 = self.fcfs_ca(self.Q3)
+                self.Q3 = self.fcfs_ca(self.Q3, 3)
 
                 # checking for process priority update
-                self.upgrade_priority(self.Q3, self.Q2)
+                self.upgrade_priority(self.Q3, self.Q2, level=2)
 
         # print averages
         self.end_print()
 
     # DONE (gui testing left)
-    def custom_algorithm(self, Qcurrent, Qnext, qnt, Qlast=None):
+    def custom_algorithm(self, Qcurrent, Qnext, qnt, level):
         # printing time and arrived processes
         print("time:", self.current_time, "\n")
         print_arrived(self.Q1, 1)
@@ -458,34 +473,42 @@ class Scheduler:
         if qnt > 0:
             self.current_process = Qcurrent[0]
             # process not finished
-            if Qcurrent[0].remaining_time > 0:
+            if self.current_process.remaining_time > 0:
                 print("running process: p", Qcurrent[0].pid, sep='')
                 print("____________________")
                 Qcurrent[0].Qwaited = 0
 
                 # record first started
-                if Qcurrent[0].remaining_time == Qcurrent[0].bt:
-                    Qcurrent[0].first_started = self.current_time
+                if self.current_process.remaining_time == self.current_process.bt:
+                    self.current_process.first_started = self.current_time
+                    self.current_process.update_queue_level(self.current_time, level)
+
+                if self.current_process != self.previous_process:
+                    # Record the start time when the process starts running
+                    self.current_process.start_running(self.current_time)
 
                 qnt -= 1  # decrement quantum timer for process
-                Qcurrent[0].remaining_time -= 1  # decrement remaining time for process
+                self.current_process.remaining_time -= 1  # decrement remaining time for process
 
                 # process finished
-                if Qcurrent[0].remaining_time == 0:
-                    self.finished_process.append(Qcurrent[0])  # add process to finished list
-                    Qcurrent[0].ft = self.current_time + 1  # record finish time
+                if self.current_process.remaining_time == 0:
+                    self.finished_process.append(self.current_process)  # add process to finished list
+                    self.current_process.ft = self.current_time + 1  # record finish time
                     Qcurrent = Qcurrent[1:]  # remove process and push others
                     done_process = True
+                    self.current_process.end_running(self.current_time)
 
                 # add to next queue and remove process from current queue
-                if qnt <= 0:
+                elif qnt <= 0:
                     if Qcurrent:
                         Qnext.append(Qcurrent[0])
                         Qcurrent = Qcurrent[1:]
+                        self.current_process.end_running(self.current_time)
 
+            self.previous_process = self.current_process
             self.current_time += 1  # increment timer
 
-            return Qcurrent, Qnext, Qlast, qnt, done_process
+            return Qcurrent, Qnext, qnt, done_process
 
     # DONE
     def sort_process_in_queues(self):
@@ -514,7 +537,7 @@ class Scheduler:
         print("average waiting time: %.1f" % avg_wt(self.finished_process))
         print("")
 
-    def upgrade_priority(self, Qlow, Qhigh):
+    def upgrade_priority(self, Qlow, Qhigh, level):
         # increment the time processes are waiting
         if Qlow and self.current_process:
             for p in Qlow:
@@ -524,3 +547,6 @@ class Scheduler:
                         Qlow.remove(p)
                         Qhigh.append(p)
                         p.Qwaited = 0
+
+                        # Update queue level of process
+                        p.update_queue_level(self.current_time, level)
