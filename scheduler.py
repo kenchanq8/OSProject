@@ -59,8 +59,6 @@ class Scheduler:
         self.Q3 = []  # queue level 3 fcfs
 
     def draw_gantt_chart(self, ax, choice, level=None):
-        # run scheduler
-
         print("Start drawing Gantt chart")
 
         yticks = []
@@ -136,7 +134,7 @@ class Scheduler:
         ax.set_yticks(yticks)
         ax.set_yticklabels(ylabels)
 
-        # debugging
+        # Debugging
         print("Gantt chart drawing completed.")
         return
 
@@ -151,9 +149,9 @@ class Scheduler:
                 P = process.Process(pid, at, bt, priority)
                 self.process.append(P)
 
-    # DONE TESTING GUI (changed code to fit gui drawing)
+    # DONE TESTING GUI
     def pp(self):
-        # preemptive priority
+        # Preemptive Priority
         if not self.process:  # leave if empty
             return False
 
@@ -167,12 +165,12 @@ class Scheduler:
                     self.process.remove(process)
 
             if not self.arrived_process:
-                # if no processes arrived
+                # If no processes arrived
                 next_arrival = min(process.at for process in self.process)
                 self.current_time = next_arrival
                 continue
 
-            # sort arrived processes based on remaining time
+            # Sort arrived processes based on remaining time
             for i in range(len(self.arrived_process)):
                 min_i = i
                 for j in range(i + 1, len(self.arrived_process)):
@@ -186,7 +184,7 @@ class Scheduler:
 
             print(" ")
 
-            # set current running process to the first arrived process
+            # Set current running process to the first arrived process
             self.current_process = self.arrived_process[0]
 
             if self.current_process.remaining_time == self.current_process.bt:
@@ -201,37 +199,37 @@ class Scheduler:
             print("running process: p", self.current_process.pid, sep='')
             print("____________________")
 
-            self.current_time += 1  # increment time
-            self.current_process.remaining_time -= 1  # decrement process time
+            self.current_time += 1  # Increment time
+            self.current_process.remaining_time -= 1  # Decrement process time
             self.previous_process = self.current_process
 
             if self.current_process.remaining_time == 0:
-                # process complete
-                self.current_process.ft = self.current_time  # store finish time
-                self.finished_process.append(self.current_process)  # add to finished processes
-                self.arrived_process.remove(self.current_process)  # remove from arrival list
+                # Process complete
+                self.current_process.ft = self.current_time  # Store finish time
+                self.finished_process.append(self.current_process)  # Add to finished processes
+                self.arrived_process.remove(self.current_process)  # Remove from arrival list
                 self.current_process.end_running(self.current_time - 1)
 
-        # print averages
+        # Print averages
         self.end_print()
 
     # DONE TESTING GUI
     def rr(self):
-        # round-robin
+        # Round-Robin
 
-        current_process_qtimer = self.quantum  # set timer for current running process
+        current_process_qtimer = self.quantum  # Set timer for current running process
 
         while self.process or self.arrived_process:
             print("time:", self.current_time, "\n")
 
-            if self.process:  # check if list is not empty
-                for process in self.process[:]:  # loop over all process
-                    # add process to arrived process list and remove from processes list
+            if self.process:  # Check if list is not empty
+                for process in self.process[:]:  # Loop over all process
+                    # Add process to arrived process list and remove from processes list
                     if process.at <= self.current_time:
                         self.arrived_process.append(process)
                         self.process.remove(process)
 
-            # print all arrived processes with their remaining time
+            # Print all arrived processes with their remaining time
             if self.arrived_process:
                 print("arrived processes:")
                 for process in self.arrived_process:
@@ -239,7 +237,7 @@ class Scheduler:
 
                 print(" ")
 
-                # set current running process to the first arrived process
+                # Set current running process to the first arrived process
                 self.current_process = self.arrived_process[0]
 
                 if self.current_process.remaining_time > 0:
@@ -248,7 +246,7 @@ class Scheduler:
                         print("running process: p", self.current_process.pid, sep='')
                         print("____________________")
 
-                        # record first started
+                        # Record first started
                         if self.current_process.remaining_time == self.current_process.bt:
                             self.current_process.first_started = self.current_time
 
@@ -256,67 +254,67 @@ class Scheduler:
                             # Record the start time when the process starts running
                             self.current_process.start_running(self.current_time)
 
-                        current_process_qtimer -= 1  # decrement quantum timer for process
-                        self.current_process.remaining_time -= 1  # decrement remaining time for process
+                        current_process_qtimer -= 1  # Decrement quantum timer for process
+                        self.current_process.remaining_time -= 1  # Decrement remaining time for process
 
-                        # process finished
+                        # Process finished
                         if self.current_process.remaining_time == 0:
-                            self.finished_process.append(self.current_process)  # add process to finished list
-                            self.arrived_process = self.arrived_process[1:]  # remove current and push elems
-                            self.current_process.ft = self.current_time + 1  # record finish time
+                            self.finished_process.append(self.current_process)  # Add process to finished list
+                            self.arrived_process = self.arrived_process[1:]  # Remove current and push elems
+                            self.current_process.ft = self.current_time + 1  # Record finish time
                             current_process_qtimer = self.quantum
                             self.current_process.end_running(self.current_time)
 
-                        # got switched without finishing
+                        # Got switched without finishing
                         if current_process_qtimer == 0:
-                            self.arrived_process = self.arrived_process[1:]  # remove first element
+                            self.arrived_process = self.arrived_process[1:]  # Remove first element
                             self.current_process.end_running(self.current_time)
 
-                            # add process arriving next iteration before the currently switched process
+                            # Add process arriving next iteration before the currently switched process
                             for process in self.process[:]:
-                                if process.at == (self.current_time + 1):  # check for arriving processes
-                                    self.arrived_process.append(process)  # add process to arrived process list
-                                    self.process.remove(process)  # remove process from process list
+                                if process.at == (self.current_time + 1):  # Check for arriving processes
+                                    self.arrived_process.append(process)  # Add process to arrived process list
+                                    self.process.remove(process)  # Remove process from process list
                                     # (avoids repetition in the arrived process list)
 
-                            self.arrived_process.append(self.current_process)  # read switched process
-                            current_process_qtimer = self.quantum  # reset quantum timer
+                            self.arrived_process.append(self.current_process)  # Read switched process
+                            current_process_qtimer = self.quantum  # Reset quantum timer
 
                 self.previous_process = self.current_process
-                self.current_time += 1  # increment timer
+                self.current_time += 1  # Increment timer
 
-            # no processes passed
+            # No processes passed
             else:
                 print("No processes arrived")
 
-        # print averages
+        # Print averages
         self.end_print()
 
     # DONE TESTING GUI
     def srtf(self):
-        # shortest remaining time first
+        # Shortest remaining time first
 
-        if not self.process:  # empty process passed
+        if not self.process:  # Empty process passed
             return False
 
         while self.process or self.arrived_process:
             print("time:", self.current_time, "\n")
-            if self.process:  # check if list is not empty
+            if self.process:  # Check if list is not empty
                 for process in self.process[:]:
-                    # filter processes based on arrival time
+                    # Filter processes based on arrival time
                     if process.at <= self.current_time:
-                        self.arrived_process.append(process)  # add to arrived processes
-                        self.process.remove(process)  # remove from process list
+                        self.arrived_process.append(process)  # Add to arrived processes
+                        self.process.remove(process)  # Remove from process list
 
-            # print all arrived processes with their remaining time
+            # Print all arrived processes with their remaining time
             if self.arrived_process:
                 print("arrived processes:")
 
-                # print arrived processes
+                # Print arrived processes
                 for process in self.arrived_process:
                     print(f"p{process.pid}: {process.remaining_time}", sep='')
 
-                # sort arrived processes based on remaining time
+                # Sort arrived processes based on remaining time
                 for i in range(len(self.arrived_process)):
                     min_i = i
                     for j in range(i + 1, len(self.arrived_process)):
@@ -326,56 +324,56 @@ class Scheduler:
                         self.arrived_process[min_i], self.arrived_process[i]
                 print(" ")
 
-                # chooses the shortest process
+                # Chooses the shortest process
                 self.current_process = self.arrived_process[0]
 
-                # record process first started time
+                # Record process first started time
                 if self.current_process.remaining_time == self.current_process.bt:
                     self.current_process.first_started = self.current_time
 
                 if self.current_process != self.previous_process:
                     # Record the start time when the process starts running
-                    self.current_process.start_running(self.current_time)  # record start time for drawing
+                    self.current_process.start_running(self.current_time)  # Record start time for drawing
 
-                # print running process
+                # Print running process
                 print("running process: p", self.current_process.pid, sep='')
                 print("____________________")
 
-                self.current_time += 1  # increment time
-                self.current_process.remaining_time -= 1  # decrement process remaining time
+                self.current_time += 1  # Increment time
+                self.current_process.remaining_time -= 1  # Decrement process remaining time
                 self.previous_process = self.current_process
 
-                # procees complete
+                # Procees complete
                 if self.current_process.remaining_time == 0:
-                    self.current_process.ft = self.current_time  # store finish time
-                    self.finished_process.append(self.current_process)  # add to finished processes
-                    self.arrived_process = self.arrived_process[1:]  # remove from arrival list
-                    self.current_process.end_running(self.current_time - 1)  # record end time for drawing
+                    self.current_process.ft = self.current_time  # Store finish time
+                    self.finished_process.append(self.current_process)  # Add to finished processes
+                    self.arrived_process = self.arrived_process[1:]  # Remove from arrival list
+                    self.current_process.end_running(self.current_time - 1)  # Record end time for drawing
 
-            # no arrived processes
+            # No arrived processes
             else:
-                self.current_time += 1  # increment time
+                self.current_time += 1  # Increment time
                 self.previous_process = self.current_process
 
-        # print averages
+        # Print averages
         self.end_print()
 
     # DONE
     def fcfs_ca(self, Q, level):
-        # empty process passed
+        # Empty process passed
         if not Q:
             return
 
         print("time:", self.current_time, "\n")
 
-        # print arrived processes in queues
+        # Print arrived processes in queues
         print_arrived(self.Q1, 1)
         print_arrived(self.Q2, 2)
         print_arrived(self.Q3, 3)
 
         self.current_process = Q[0]
 
-        # record start time
+        # Record start time
         if self.current_process.remaining_time == self.current_process.bt:
             self.current_process.first_started = self.current_time
             self.current_process.update_queue_level(self.current_time, level)
@@ -384,50 +382,50 @@ class Scheduler:
             # Record the start time when the process starts running
             self.current_process.start_running(self.current_time)
 
-        # print running process
+        # Print running process
         print("running process: p", self.current_process.pid, sep='')
         print("____________________")
         self.current_process.Qwaited = 0
 
-        self.current_process.remaining_time -= 1  # decrement process remaining time
+        self.current_process.remaining_time -= 1  # Decrement process remaining time
 
-        # procees complete
+        # Procees complete
         if self.current_process.remaining_time <= 0:
-            self.current_process.ft = self.current_time  # store finish time
-            self.finished_process.append(self.current_process)  # add to finished processes
-            Q = Q[1:]  # remove from arrival list
+            self.current_process.ft = self.current_time  # Store finish time
+            self.finished_process.append(self.current_process)  # Add to finished processes
+            Q = Q[1:]  # Remove from arrival list
             self.current_process.end_running(self.current_time)
 
         self.previous_process = self.current_process
-        self.current_time += 1  # increment timer
+        self.current_time += 1  # Increment timer
         return Q
 
-    # DONE (gui testing left)
+    # DONE
     def mlfq(self):
-        # no processes delivered
+        # No processes delivered
         if not self.process:
             return False
 
         while self.process or self.arrived_process or self.Q1 or self.Q2 or self.Q3:
-            # add all arrived processes in list
+            # Add all arrived processes in list
             for process in self.process[:]:
-                if process.at <= self.current_time:  # process arrived
+                if process.at <= self.current_time:  # Process arrived
                     self.arrived_process.append(process)
                     self.process.remove(process)
 
             if self.arrived_process:
-                # sort arrived processes in queues
+                # Sort arrived processes in queues
                 self.sort_process_in_queues()
 
             if self.Q1:
-                # run algorithm
+                # Run algorithm
                 self.Q1, self.Q2, self.qnt1, done_process = self.custom_algorithm(self.Q1, self.Q2, self.qnt1, 1)
 
-                # reset quantum
+                # Reset quantum
                 if self.qnt1 == 0 or done_process:
                     self.qnt1 = QUANTUM1
 
-                # checking for process priority update
+                # Checking for process priority update
                 self.upgrade_priority(self.Q1, self.Q1, level=1)
                 self.upgrade_priority(self.Q2, self.Q1, level=1)
                 self.upgrade_priority(self.Q3, self.Q2, level=2)
@@ -436,49 +434,49 @@ class Scheduler:
                 if self.Q1:  # Q1 is not empty
                     continue
 
-                # run algorithm
+                # Run algorithm
                 self.Q2, self.Q3, self.qnt2, done_process = self.custom_algorithm(self.Q2, self.Q3, self.qnt2, 2)
 
-                # reset quantum
+                # Reset quantum
                 if self.qnt2 == 0 or done_process:
                     self.qnt2 = QUANTUM2
 
-                # checking for process priority update
+                # Checking for process priority update
                 self.upgrade_priority(self.Q2, self.Q1, level=1)
                 self.upgrade_priority(self.Q3, self.Q2, level=2)
 
-            elif self.Q3:  # if Q1 or Q2 is not empty
+            elif self.Q3:  # If Q1 or Q2 is not empty
                 if self.Q1 or self.Q2:
                     continue
 
-                # run algorithm
+                # Run algorithm
                 self.Q3 = self.fcfs_ca(self.Q3, 3)
 
-                # checking for process priority update
+                # Checking for process priority update
                 self.upgrade_priority(self.Q3, self.Q2, level=2)
 
-        # print averages
+        # Print averages
         self.end_print()
 
-    # DONE (gui testing left)
+    # DONE
     def custom_algorithm(self, Qcurrent, Qnext, qnt, level):
-        # printing time and arrived processes
+        # Printing time and arrived processes
         print("time:", self.current_time, "\n")
         print_arrived(self.Q1, 1)
         print_arrived(self.Q2, 2)
         print_arrived(self.Q3, 3)
 
-        done_process = None  # reset flag
+        done_process = None  # Reset flag
 
         if qnt > 0:
             self.current_process = Qcurrent[0]
-            # process not finished
+            # Process not finished
             if self.current_process.remaining_time > 0:
                 print("running process: p", Qcurrent[0].pid, sep='')
                 print("____________________")
                 Qcurrent[0].Qwaited = 0
 
-                # record first started
+                # Record first started
                 if self.current_process.remaining_time == self.current_process.bt:
                     self.current_process.first_started = self.current_time
                     self.current_process.update_queue_level(self.current_time, level)
@@ -487,18 +485,18 @@ class Scheduler:
                     # Record the start time when the process starts running
                     self.current_process.start_running(self.current_time)
 
-                qnt -= 1  # decrement quantum timer for process
-                self.current_process.remaining_time -= 1  # decrement remaining time for process
+                qnt -= 1  # dDcrement quantum timer for process
+                self.current_process.remaining_time -= 1  # Decrement remaining time for process
 
-                # process finished
+                # Process finished
                 if self.current_process.remaining_time == 0:
-                    self.finished_process.append(self.current_process)  # add process to finished list
-                    self.current_process.ft = self.current_time + 1  # record finish time
-                    Qcurrent = Qcurrent[1:]  # remove process and push others
+                    self.finished_process.append(self.current_process)  # Add process to finished list
+                    self.current_process.ft = self.current_time + 1  # Record finish time
+                    Qcurrent = Qcurrent[1:]  # Remove process and push others
                     done_process = True
                     self.current_process.end_running(self.current_time)
 
-                # add to next queue and remove process from current queue
+                # Add to next queue and remove process from current queue
                 elif qnt <= 0:
                     if Qcurrent:
                         Qnext.append(Qcurrent[0])
@@ -506,7 +504,7 @@ class Scheduler:
                         self.current_process.end_running(self.current_time)
 
             self.previous_process = self.current_process
-            self.current_time += 1  # increment timer
+            self.current_time += 1  # Increment timer
 
             return Qcurrent, Qnext, qnt, done_process
 
@@ -528,17 +526,17 @@ class Scheduler:
                 self.arrived_process.remove(process)
 
     def end_print(self):
-        # end of running queue
+        # End of running queue
         print("\nrunning finished at time", self.current_time)
 
-        # calculate averages
+        # Calculate averages
         print("\naverage response time: %.1f" % avg_rt(self.finished_process))
         print("average turn around time time: %.1f" % avg_tat(self.finished_process))
         print("average waiting time: %.1f" % avg_wt(self.finished_process))
         print("")
 
     def upgrade_priority(self, Qlow, Qhigh, level):
-        # increment the time processes are waiting
+        # Increment the time processes are waiting
         if Qlow and self.current_process:
             for p in Qlow:
                 if p.pid != self.current_process.pid:
